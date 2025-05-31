@@ -22,7 +22,7 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
         sessions.add(session);
 
         SeasonChangeDto dto = new SeasonChangeDto(
-                "seasonChange",
+                "seasonUpdate",
                 currentSeason,
                 Instant.now().toString()
         );
@@ -42,10 +42,15 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
         ObjectMapper objectMapper = new ObjectMapper();
         SeasonChangeDto incomingDto = objectMapper.readValue(payload, SeasonChangeDto.class);
 
+        if (!"changeRequest".equals(incomingDto.getType())) {
+            System.out.println("잘못된 메시지 타입: " + incomingDto.getType());
+            return;
+        }
+
         currentSeason = incomingDto.getSeason();
 
         SeasonChangeDto dto = new SeasonChangeDto(
-                "seasonChange",
+                "seasonUpdate",
                 currentSeason,
                 Instant.now().toString()
         );

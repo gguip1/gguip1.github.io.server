@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SeasonChangeDto {
+public class SeasonDto {
     private String type;
     private String season;
     private String timestamp;

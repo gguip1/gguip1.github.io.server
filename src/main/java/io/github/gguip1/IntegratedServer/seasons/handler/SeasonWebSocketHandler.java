@@ -50,6 +50,8 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
 
         session.sendMessage(new TextMessage(seasonJsonMessage));
         allSessionsSendMessage(connectionCountJsonMessage);
+
+        System.out.println(connectionCount.get() + "개의 연결이 있습니다.");
         System.out.println("새로운 연결 : " + session.getId());
     }
 
@@ -90,6 +92,8 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
 
         String connectionCountJsonMessage = objectMapper.writeValueAsString(connectionCountDto);
         allSessionsSendMessage(connectionCountJsonMessage);
+
+        System.out.println(connectionCount.get() + "개의 연결이 있습니다.");
         System.out.println("연결 종료 : " + session.getId());
     }
 

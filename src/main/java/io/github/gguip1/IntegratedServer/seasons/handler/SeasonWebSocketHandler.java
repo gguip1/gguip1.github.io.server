@@ -93,7 +93,7 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
         System.out.println("연결 종료 : " + session.getId());
     }
 
-    private void allSessionsSendMessage(String message) throws Exception {
+    private void allSessionsSendMessage(String message) {
         sessions.parallelStream().forEach(session -> {
             if (session.isOpen()) {
                 try {

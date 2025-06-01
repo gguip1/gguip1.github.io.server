@@ -1,6 +1,7 @@
 package io.github.gguip1.IntegratedServer.seasons.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.gguip1.IntegratedServer.seasons.message.ConnectionCountDto;
 import io.github.gguip1.IntegratedServer.seasons.message.SeasonDto;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,26 +25,36 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final AtomicInteger connectionCount = new AtomicInteger(0);
     private String currentSeason = "spring";
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         sessions.add(session);
 
-        SeasonDto dto = new SeasonDto(
+        SeasonDto seasonDto = new SeasonDto(
                 "seasonUpdate",
                 currentSeason,
                 Instant.now().toString()
         );
 
-        String jsonMessage = objectMapper.writeValueAsString(dto);
+        ConnectionCountDto connectionCountDto = new ConnectionCountDto(
+                "connectionCount",
+                connectionCount.incrementAndGet(),
+                Instant.now().toString()
+        );
 
-        session.sendMessage(new TextMessage(jsonMessage));
+        String seasonJsonMessage = objectMapper.writeValueAsString(seasonDto);
+        String connectionCountJsonMessage = objectMapper.writeValueAsString(connectionCountDto);
+
+        session.sendMessage(new TextMessage(seasonJsonMessage));
+        allSessionsSendMessage(connectionCountJsonMessage);
         System.out.println("새로운 연결 : " + session.getId());
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    protected void handleTextMessage(@NonNull WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
         System.out.println("받은 메시지 : " + payload);
 
@@ -66,8 +79,17 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) throws Exception {
         sessions.remove(session);
+
+        ConnectionCountDto connectionCountDto = new ConnectionCountDto(
+                "connectionCount",
+                connectionCount.decrementAndGet(),
+                Instant.now().toString()
+        );
+
+        String connectionCountJsonMessage = objectMapper.writeValueAsString(connectionCountDto);
+        allSessionsSendMessage(connectionCountJsonMessage);
         System.out.println("연결 종료 : " + session.getId());
     }
 
@@ -77,7 +99,7 @@ public class SeasonWebSocketHandler extends TextWebSocketHandler {
                 try {
                     session.sendMessage(new TextMessage(message));
                 } catch (IOException e) {
-                    logger.error("메시지 전송 실패: " + e.getMessage(), e);
+                    logger.error("메시지 전송 실패: {}", e.getMessage(), e);
                 }
             }
         });
